@@ -14,6 +14,9 @@ import shutil
 import sys
 from typing import Iterable, Optional
 import os
+import os.path as osp
+import pandas as pd
+import numpy as np
 
 import torch
 
@@ -23,6 +26,7 @@ from timm.utils import accuracy
 import util.misc as misc
 import util.lr_sched as lr_sched
 from PIL import ImageFile
+
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
@@ -109,9 +113,18 @@ def evaluate(data_loader, model, device, class_idx_map=None, visualize_epoch=0, 
     # switch to evaluation mode
     model.eval()
 
+    # to save results
+    save_dir = f"results/clef_plant_results_epoch{visualize_epoch}"
+    if os.path.exists(save_dir):
+        shutil.rmtree(save_dir)
+        os.makedirs(save_dir)
+    else:
+        os.makedirs(save_dir)
+    # end to save result
+
     for i, batch in enumerate(metric_logger.log_every(data_loader, 10, header)):
         images = batch[0]
-        file_names = data_loader.dataset.samples[i:i+images.size(0)]
+        file_names = data_loader.dataset.samples[i * images.size(0):i * images.size(0) + images.size(0)]
         target = batch[-1]
         images = images.to(device, non_blocking=True)
         target = target.to(device, non_blocking=True)
@@ -123,23 +136,27 @@ def evaluate(data_loader, model, device, class_idx_map=None, visualize_epoch=0, 
 
             ###################################################################
             # to save the results
-            save_dir = f"clef_plant2022_results_epoch{visualize_epoch}"
-            if os.path.exists(save_dir):
-                shutil.rmtree(save_dir)
-                os.makedirs(save_dir)
-            else:
-                os.makedirs(save_dir)
             if visualize_epoch:
                 scores, predictions = output.softmax(dim=1).topk(k=max_num, dim=1)
                 for batch_i in range(images.size(0)):
+                    file_name_ = os.path.splitext(os.path.basename(file_names[batch_i][0]))[0]
+                    label_batch = []
                     for num in range(max_num):
-                        file_name_ = os.path.splitext(os.path.basename(file_names[batch_i][0]))[0]
                         label = predictions[batch_i, num].cpu().item()
                         label = [k for k, v in class_idx_map.items() if v == label][0]
-                        score = scores[batch_i, num].cpu().item()
-                        single = str(label) + ";" + str(score) + ";" + str(num+1) + '\n'
-                        with open(f'{save_dir}/{file_name_}.csv', 'a+') as file:
-                            file.writelines(str(single))
+                        label_batch.append(label)
+                    # label = predictions[batch_i].cpu().numpy().flatten()
+                    # label_batch = [k for num in range(len(label)) for k, v in class_idx_map.items() if v == label[num]]
+                    score_batch = scores[batch_i].cpu().numpy()
+                    rank_batch = list(range(1, max_num + 1))
+                    label_batch = np.array(label_batch)
+
+                    submission_df = pd.DataFrame({
+                        'label': np.array(label_batch).flatten(),
+                        'score': np.array(score_batch).flatten(),
+                        'rank': np.array(rank_batch).flatten()
+                    })
+                    submission_df.to_csv(f"{save_dir}/{file_name_}.csv", index=False)
             # the end
             ###################################################################
 
@@ -156,8 +173,5 @@ def evaluate(data_loader, model, device, class_idx_map=None, visualize_epoch=0, 
     metric_logger.synchronize_between_processes()
     print('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}'
           .format(top1=metric_logger.acc1, top5=metric_logger.acc5, losses=metric_logger.loss))
-
-    # with open('results.txt', 'w+') as file:
-    #     file.writelines(str(save_results))
 
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}

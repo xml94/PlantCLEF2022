@@ -7,8 +7,8 @@ a = 1
 b = 9
 c = 0
 
-src_dir = "/home/oem/Mingle/leaf_disease/ClefPlant2022/train"
-tgt_dir = f"/home/oem/Mingle/leaf_disease/ClefPlant2022_split_{a}{b}{c}/"
+src_dir = "/home/oem/Mingle/datasets/leaf_disease/ClefPlant2022/train"
+tgt_dir = f"/home/oem/Mingle/datasets/leaf_disease/ClefPlant2022_split_{a}{b}{c}/"
 
 # train, val, test
 ratio = [0.1 * a, 0.1 * b, 0.1 * c]
