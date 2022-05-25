@@ -3,7 +3,6 @@ import os.path as osp
 import os
 import numpy as np
 import argparse
-from util.save_csv import save_csv
 
 
 parser = argparse.ArgumentParser()

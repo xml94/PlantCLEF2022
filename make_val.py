@@ -3,12 +3,13 @@ import shutil
 import os.path as osp
 
 
+# split 10% as validation dataset
 a = 1
 b = 9
 c = 0
 
-src_dir = "/home/oem/Mingle/datasets/leaf_disease/ClefPlant2022/train"
-tgt_dir = f"/home/oem/Mingle/datasets/leaf_disease/ClefPlant2022_split_{a}{b}{c}/"
+src_dir = "/home/oem/Mingle/datasets/PlantCLEF2022/train"
+tgt_dir = "/home/oem/Mingle/datasets/PlantCLEF2022_train"
 
 # train, val, test
 ratio = [0.1 * a, 0.1 * b, 0.1 * c]
