@@ -15,7 +15,7 @@ import sys
 from typing import Iterable, Optional
 import os
 import os.path as osp
-import pandas as pd
+# import pandas as pd
 import numpy as np
 
 import torch
